@@ -33,7 +33,7 @@ void check_format(std::string_view s) {
         CHECK(s == expected);
     } else if constexpr(std::is_same_v<T, Types::Wrapper>) {
         std::string_view const expected
-          = R"({opt_some: optional(42), opt_none: none, var: variant("variant_string"), tup: (100, 3.14, "tuple_str"), pr: (200, "pair_str")})";
+          = R"({opt_some: optional(42), opt_none: none, var: variant("variant_string"), tup: (100, 3.14, "tuple_str"), pr: (200, "pair_str"), exp_val: expected(99), exp_err: unexpected("error_msg")})";
         CHECK(s == expected);
     } else if constexpr(std::is_same_v<T, Types::Chrono>) {
         std::string_view const expected

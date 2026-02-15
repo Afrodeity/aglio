@@ -2,6 +2,7 @@
 
 #include <array>
 #include <chrono>
+#include <expected>
 #include <map>
 #include <optional>
 #include <set>
@@ -57,15 +58,17 @@ struct Associative {
     constexpr auto operator<=>(Associative const&) const = default;
 };
 
-// optional, variant, tuple, pair
+// optional, variant, tuple, pair, expected
 struct Wrapper {
     std::optional<int>                    opt_some{};
     std::optional<int>                    opt_none{};
     std::variant<int, float, std::string> var{};
     std::tuple<int, float, std::string>   tup{};
     std::pair<int, std::string>           pr{};
+    std::expected<int, std::string>       exp_val{};
+    std::expected<int, std::string>       exp_err{};
 
-    constexpr auto operator<=>(Wrapper const&) const = default;
+    constexpr bool operator==(Wrapper const&) const = default;
 };
 
 // Chrono duration types
@@ -140,7 +143,9 @@ Wrapper createDefault<Wrapper>() {
       .opt_none = std::nullopt,
       .var      = std::string("variant_string"),
       .tup      = {100, 3.14f, "tuple_str"},
-      .pr       = {200, "pair_str"}
+      .pr       = {200, "pair_str"},
+      .exp_val  = 99,
+      .exp_err  = std::unexpected{std::string("error_msg")}
     };
 }
 

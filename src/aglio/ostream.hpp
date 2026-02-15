@@ -6,6 +6,7 @@
 
 #ifdef AGLIO_OSTREAM_DEFINE_STD
     #include <array>
+    #include <expected>
     #include <map>
     #include <optional>
     #include <set>
@@ -31,6 +32,13 @@ template<typename Stream,
          typename T>
 Stream& operator<<(Stream&                 os,
                    std::optional<T> const& opt);
+
+template<typename Stream,
+         typename T,
+         typename E>
+Stream& operator<<(Stream&                 os,
+                   std::expected<T,
+                                 E> const& v);
 
 template<typename Stream,
          typename... Ts>
@@ -234,6 +242,25 @@ Stream& operator<<(Stream&                 os,
         os << ")";
     } else {
         os << "none";
+    }
+    return os;
+}
+
+// std::expected
+template<typename Stream,
+         typename T,
+         typename E>
+Stream& operator<<(Stream&                 os,
+                   std::expected<T,
+                                 E> const& v) {
+    if(v.has_value()) {
+        os << "expected(";
+        aglio::ostream::detail::print_value(os, *v);
+        os << ")";
+    } else {
+        os << "unexpected(";
+        aglio::ostream::detail::print_value(os, v.error());
+        os << ")";
     }
     return os;
 }

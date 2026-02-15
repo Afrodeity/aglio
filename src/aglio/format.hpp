@@ -9,6 +9,7 @@
 
 #ifdef AGLIO_FORMAT_DEFINE_STD
     #include <array>
+    #include <expected>
     #include <map>
     #include <optional>
     #include <ranges>
@@ -65,6 +66,30 @@ struct std::formatter<std::optional<T>> {
             return std::format_to(out, ")");
         } else {
             return std::format_to(ctx.out(), "none");
+        }
+    }
+};
+
+// std::expected
+template<typename T, typename E>
+struct std::formatter<std::expected<T, E>> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) const {
+        return ctx.begin();
+    }
+
+    template<typename FormatContext>
+    auto format(std::expected<T,
+                              E> const& v,
+                FormatContext&          ctx) const {
+        if(v.has_value()) {
+            auto out = std::format_to(ctx.out(), "expected(");
+            out      = aglio::format::detail::print_value(out, *v);
+            return std::format_to(out, ")");
+        } else {
+            auto out = std::format_to(ctx.out(), "unexpected(");
+            out      = aglio::format::detail::print_value(out, v.error());
+            return std::format_to(out, ")");
         }
     }
 };

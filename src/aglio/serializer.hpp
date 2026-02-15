@@ -7,6 +7,7 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <expected>
 #include <optional>
 #include <ranges>
 #include <span>
@@ -132,6 +133,34 @@ struct serializer<std::optional<T>, Size_t> {
             return serializer<T, Size_t>::deserialize(*v, buffer);
         }
         v = std::nullopt;
+        return true;
+    }
+};
+
+template<typename T, typename E, typename Size_t>
+struct serializer<std::expected<T, E>, Size_t> {
+    template<typename Buffer>
+    static constexpr bool serialize(std::expected<T,
+                                                  E> const& v,
+                                    Buffer&                 buffer) {
+        if(!serializer<bool, Size_t>::serialize(v.has_value(), buffer)) { return false; }
+        if(v.has_value()) { return serializer<T, Size_t>::serialize(*v, buffer); }
+        return serializer<E, Size_t>::serialize(v.error(), buffer);
+    }
+
+    template<typename Buffer>
+    static constexpr bool deserialize(std::expected<T,
+                                                    E>& v,
+                                      Buffer&           buffer) {
+        bool has_value{};
+        if(!serializer<bool, Size_t>::deserialize(has_value, buffer)) { return false; }
+        if(has_value) {
+            v.emplace();
+            return serializer<T, Size_t>::deserialize(*v, buffer);
+        }
+        E err;
+        if(!serializer<E, Size_t>::deserialize(err, buffer)) { return false; }
+        v = std::unexpected{err};
         return true;
     }
 };
