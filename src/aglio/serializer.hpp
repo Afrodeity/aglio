@@ -243,7 +243,9 @@ struct serializer<T, Size_t> {
                                     Buffer&  buffer) {
         return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
             using std::get;
-            return (serializer<std::tuple_element_t<Is, T>, Size_t>::serialize(get<Is>(v), buffer)
+            return (serializer<std::remove_cvref_t<std::tuple_element_t<Is, T>>, Size_t>::serialize(
+                      get<Is>(v),
+                      buffer)
                     && ...);
         }(std::make_index_sequence<std::tuple_size_v<T>>{});
     }
@@ -253,8 +255,11 @@ struct serializer<T, Size_t> {
                                       Buffer& buffer) {
         return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
             using std::get;
-            return (serializer<std::tuple_element_t<Is, T>, Size_t>::deserialize(get<Is>(v), buffer)
-                    && ...);
+            return (
+              serializer<std::remove_cvref_t<std::tuple_element_t<Is, T>>, Size_t>::deserialize(
+                get<Is>(v),
+                buffer)
+              && ...);
         }(std::make_index_sequence<std::tuple_size_v<T>>{});
     }
 };

@@ -100,6 +100,11 @@ struct Enum {
     constexpr auto operator<=>(Enum const&) const = default;
 };
 
+// Empty struct (no members)
+struct Empty {
+    constexpr auto operator<=>(Empty const&) const = default;
+};
+
 template<typename T>
 T createDefault();
 
@@ -172,11 +177,6 @@ template<>
 Enum createDefault<Enum>() {
     return Enum{.color = Color::Blue, .status = Active};
 }
-
-// Empty struct (no members)
-struct Empty {
-    constexpr auto operator<=>(Empty const&) const = default;
-};
 
 template<>
 Empty createDefault<Empty>() {
