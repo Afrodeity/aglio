@@ -21,7 +21,7 @@ if(NOT TARGET glaze_glaze)
         GIT_REPOSITORY
         https://github.com/stephenberry/glaze.git
         GIT_TAG
-        v7.0.1
+        v7.0.2
         GIT_BRANCH
         main
         PATCH_FILE

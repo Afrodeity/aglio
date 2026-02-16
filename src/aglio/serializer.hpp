@@ -86,6 +86,11 @@ struct serializer<T, Size_t> {
 template<Described T, typename Size_t>
     requires(!std::ranges::range<T>)
 struct serializer<T, Size_t> {
+    static_assert(
+      glz::reflect<T>::size > 0 || std::is_empty_v<T>,
+      "Described type has members but glaze reflects 0. "
+      "This can happen with reference members. Provide a custom aglio::serializer specialization.");
+
     template<typename Buffer>
     static constexpr bool serialize(T const& v,
                                     Buffer&  buffer) {

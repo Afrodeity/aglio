@@ -43,3 +43,19 @@ target_link_libraries(test_aglio PRIVATE aglio::aglio fmt::fmt Catch2::Catch2Wit
 
 enable_testing()
 add_test(NAME aglio_tests COMMAND test_aglio)
+
+# Compile-fail tests: verify that types with reference members trigger a static_assert instead of silently serializing
+# nothing.
+set(COMPILE_FAIL_EXPECTED_MESSAGE "Described type has members but glaze reflects 0")
+
+foreach(fail_test compile_fail_with_ref compile_fail_with_struct_ref)
+    add_library(${fail_test} OBJECT EXCLUDE_FROM_ALL ${fail_test}.cpp)
+    target_link_libraries(${fail_test} PRIVATE aglio::aglio)
+    target_add_default_build_options(${fail_test} PRIVATE)
+
+    add_test(
+        NAME ${fail_test}
+        COMMAND
+            ${CMAKE_COMMAND} -DBINARY_DIR=${CMAKE_BINARY_DIR} -DTARGET=${fail_test}
+            -DEXPECTED_MESSAGE=${COMPILE_FAIL_EXPECTED_MESSAGE} -P ${CMAKE_CURRENT_SOURCE_DIR}/compile_fail_test.cmake)
+endforeach()

@@ -173,6 +173,16 @@ Enum createDefault<Enum>() {
     return Enum{.color = Color::Blue, .status = Active};
 }
 
-using List = std::tuple<Primitive, Container, Associative, Wrapper, Chrono, Nested, Enum>;
+// Empty struct (no members)
+struct Empty {
+    constexpr auto operator<=>(Empty const&) const = default;
+};
+
+template<>
+Empty createDefault<Empty>() {
+    return Empty{};
+}
+
+using List = std::tuple<Primitive, Container, Associative, Wrapper, Chrono, Nested, Enum, Empty>;
 
 }   // namespace Types
