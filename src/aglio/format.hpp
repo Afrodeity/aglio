@@ -20,7 +20,6 @@
     #include <vector>
 
 template<aglio::Described T>
-    requires(!std::ranges::range<T>)
 struct std::formatter<T>;
 
 namespace aglio::format::detail {
@@ -116,7 +115,6 @@ struct std::formatter<std::variant<Ts...>> {
 #endif
 
 template<aglio::Described T>
-    requires(!std::ranges::range<T>)
 struct std::formatter<T> {
     template<typename ParseContext>
     constexpr auto parse(ParseContext& ctx) const {

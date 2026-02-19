@@ -24,7 +24,6 @@
     #endif
 
 template<aglio::Described T>
-    requires(!fmt::is_range<T, char>::value)
 struct fmt::formatter<T> {
     template<typename ParseContext>
     constexpr auto parse(ParseContext& ctx) const {

@@ -84,7 +84,6 @@ struct serializer<T, Size_t> {
 };
 
 template<Described T, typename Size_t>
-    requires(!std::ranges::range<T>)
 struct serializer<T, Size_t> {
     static_assert(
       glz::reflect<T>::size > 0 || std::is_empty_v<T>,
