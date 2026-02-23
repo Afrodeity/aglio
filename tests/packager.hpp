@@ -112,6 +112,21 @@ TEMPLATE_LIST_TEST_CASE("Packager",
     Test::packager::test<Type, aglio::Packager<Config>>();
 }
 
+TEST_CASE("Serializer rejects range that exceeds fixed-capacity container max_size",
+          "[serializer]") {
+    using Packager = aglio::Packager<Test::packager::Configs::Minimal>;
+
+    // Serialize a vector with more elements than the target array can hold
+    std::vector<int>       src    = {1, 2, 3, 4, 5};
+    std::vector<std::byte> buffer = {};
+    Packager::pack(buffer, src);
+
+    // Deserialize into a smaller array — must fail because 5 > max_size() == 3
+    std::array<int, 3> dst{};
+    auto               result = Packager::unpack(buffer, dst);
+    CHECK(!result.has_value());
+}
+
 TEST_CASE("Packager pair<primitive, struct ref>",
           "[packager]") {
     using Packager = aglio::Packager<Test::packager::Configs::Minimal>;

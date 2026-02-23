@@ -293,7 +293,7 @@ struct serializer<T, Size_t> {
 
         if(!serializer<Size_t, Size_t>::serialize(size, buffer)) { return false; }
 
-        if constexpr(is_contiguous && is_trivial) {
+        if constexpr(is_contiguous && is_trivial && !detail::is_map<T> && !detail::is_set<T>) {
             return buffer.insert(std::as_bytes(std::span{v}));
         } else {
             for(auto const& vv : v) {
@@ -310,6 +310,10 @@ struct serializer<T, Size_t> {
         if(!serializer<Size_t, Size_t>::deserialize(size, buffer)) { return false; }
         if(size > buffer.size()) { return false; }
 
+        if constexpr(requires { v.max_size(); }) {
+            if(static_cast<std::size_t>(size) > v.max_size()) { return false; }
+        }
+
         if constexpr(requires { v.resize(size); }) { v.resize(size); }
 
         if constexpr(detail::is_map<T> || detail::is_set<T>) {
@@ -318,7 +322,7 @@ struct serializer<T, Size_t> {
             if(std::ranges::size(v) != size) { return false; }
         }
 
-        if constexpr(is_contiguous && is_trivial) {
+        if constexpr(is_contiguous && is_trivial && !detail::is_map<T> && !detail::is_set<T>) {
             return buffer.extract(std::as_writable_bytes(std::span{v}));
         } else {
             if constexpr(detail::is_map<T> || detail::is_set<T>) {

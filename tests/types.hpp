@@ -105,6 +105,53 @@ struct Empty {
     constexpr auto operator<=>(Empty const&) const = default;
 };
 
+// A contiguous (array-backed) set with a trivial element type.
+// Before the fix, aglio would silently deserialize zero elements because
+// clear() empties the set and the contiguous fast-path then has a zero-length span.
+template<typename T, std::size_t Cap>
+struct ContiguousSet {
+    using key_type   = T;
+    using value_type = T;
+
+    T           data_[Cap]{};
+    std::size_t size_{0};
+
+    T* begin() noexcept { return data_; }
+
+    T const* begin() const noexcept { return data_; }
+
+    T* end() noexcept { return data_ + size_; }
+
+    T const* end() const noexcept { return data_ + size_; }
+
+    std::size_t size() const noexcept { return size_; }
+
+    void clear() noexcept { size_ = 0; }
+
+    std::pair<T*,
+              bool>
+    insert(T const& v) noexcept {
+        for(std::size_t i = 0; i < size_; ++i) {
+            if(data_[i] == v) { return {data_ + i, false}; }
+        }
+        if(size_ < Cap) { data_[size_++] = v; }
+        return {data_ + size_ - 1, true};
+    }
+
+    bool operator==(ContiguousSet const& o) const noexcept {
+        if(size_ != o.size_) { return false; }
+        for(std::size_t i = 0; i < size_; ++i) {
+            if(data_[i] != o.data_[i]) { return false; }
+        }
+        return true;
+    }
+};
+
+struct ContiguousAssociative {
+    ContiguousSet<Color, 8> cset{};
+    bool                    operator==(ContiguousAssociative const&) const = default;
+};
+
 template<typename T>
 T createDefault();
 
@@ -183,6 +230,22 @@ Empty createDefault<Empty>() {
     return Empty{};
 }
 
-using List = std::tuple<Primitive, Container, Associative, Wrapper, Chrono, Nested, Enum, Empty>;
+template<>
+ContiguousAssociative createDefault<ContiguousAssociative>() {
+    ContiguousAssociative a;
+    a.cset.insert(Color::Red);
+    a.cset.insert(Color::Blue);
+    return a;
+}
+
+using List = std::tuple<Primitive,
+                        Container,
+                        Associative,
+                        Wrapper,
+                        Chrono,
+                        Nested,
+                        Enum,
+                        Empty,
+                        ContiguousAssociative>;
 
 }   // namespace Types

@@ -49,6 +49,9 @@ void check_format(std::string_view s) {
     } else if constexpr(std::is_same_v<T, Types::Empty>) {
         std::string_view const expected = R"({})";
         CHECK(s == expected);
+    } else if constexpr(std::is_same_v<T, Types::ContiguousAssociative>) {
+        std::string_view const expected = R"({cset: {1, 3}})";
+        CHECK(s == expected);
     } else {
         // Fallback for unhandled types, will cause a test failure
         CHECK(s == "TODO IMPLEMENT");

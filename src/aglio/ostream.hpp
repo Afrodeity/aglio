@@ -2,6 +2,7 @@
 #include "type_descriptor.hpp"
 
 #include <iostream>
+#include <ranges>
 #include <string_view>
 
 #ifdef AGLIO_OSTREAM_DEFINE_STD
@@ -117,6 +118,19 @@ void print_member(Stream&          os,
     os << ": ";
     if constexpr(requires { os << value; }) {
         os << value;
+    } else if constexpr(std::ranges::range<T>) {
+        os << '{';
+        bool first = true;
+        for(auto const& elem : value) {
+            if(!first) { os << ", "; }
+            first = false;
+            if constexpr(requires { os << elem; }) {
+                os << elem;
+            } else {
+                operator<<(os, elem);
+            }
+        }
+        os << '}';
     } else {
         operator<<(os, value);
     }
@@ -129,9 +143,9 @@ template<typename Stream,
 void print_members(Stream&  os,
                    T const& v,
                    std::index_sequence<Is...>) {
-    auto tie            = glz::to_tie(v);
-    bool first          = true;
-    auto process_member = [&](auto i) {
+    auto                  tie            = glz::to_tie(v);
+    bool                  first          = true;
+    [[maybe_unused]] auto process_member = [&](auto i) {
         constexpr std::size_t I = decltype(i)::value;
         if(!first) { os << ", "; }
         first = false;
