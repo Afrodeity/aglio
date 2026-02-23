@@ -148,7 +148,12 @@ struct serializer<std::expected<T, E>, Size_t> {
                                                   E> const& v,
                                     Buffer&                 buffer) {
         if(!serializer<bool, Size_t>::serialize(v.has_value(), buffer)) { return false; }
-        if(v.has_value()) { return serializer<T, Size_t>::serialize(*v, buffer); }
+        if(v.has_value()) {
+            if constexpr(!std::is_void_v<T>) {
+                return serializer<T, Size_t>::serialize(*v, buffer);
+            }
+            return true;
+        }
         return serializer<E, Size_t>::serialize(v.error(), buffer);
     }
 
@@ -160,7 +165,10 @@ struct serializer<std::expected<T, E>, Size_t> {
         if(!serializer<bool, Size_t>::deserialize(has_value, buffer)) { return false; }
         if(has_value) {
             v.emplace();
-            return serializer<T, Size_t>::deserialize(*v, buffer);
+            if constexpr(!std::is_void_v<T>) {
+                return serializer<T, Size_t>::deserialize(*v, buffer);
+            }
+            return true;
         }
         E err;
         if(!serializer<E, Size_t>::deserialize(err, buffer)) { return false; }
