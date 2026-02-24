@@ -110,32 +110,38 @@ struct Empty {
 // clear() empties the set and the contiguous fast-path then has a zero-length span.
 template<typename T, std::size_t Cap>
 struct ContiguousSet {
-    using key_type   = T;
-    using value_type = T;
+    using key_type       = T;
+    using value_type     = T;
+    using iterator       = typename std::array<T, Cap>::iterator;
+    using const_iterator = typename std::array<T, Cap>::const_iterator;
 
-    T           data_[Cap]{};
-    std::size_t size_{0};
+    std::array<T, Cap> data_{};
+    std::size_t        size_{0};
 
-    T* begin() noexcept { return data_; }
+    iterator begin() noexcept { return data_.begin(); }
 
-    T const* begin() const noexcept { return data_; }
+    const_iterator begin() const noexcept { return data_.begin(); }
 
-    T* end() noexcept { return data_ + size_; }
+    iterator end() noexcept { return std::next(data_.begin(), static_cast<std::ptrdiff_t>(size_)); }
 
-    T const* end() const noexcept { return data_ + size_; }
+    const_iterator end() const noexcept {
+        return std::next(data_.begin(), static_cast<std::ptrdiff_t>(size_));
+    }
 
     std::size_t size() const noexcept { return size_; }
 
     void clear() noexcept { size_ = 0; }
 
-    std::pair<T*,
+    std::pair<iterator,
               bool>
     insert(T const& v) noexcept {
         for(std::size_t i = 0; i < size_; ++i) {
-            if(data_[i] == v) { return {data_ + i, false}; }
+            if(data_[i] == v) {
+                return {std::next(data_.begin(), static_cast<std::ptrdiff_t>(i)), false};
+            }
         }
         if(size_ < Cap) { data_[size_++] = v; }
-        return {data_ + size_ - 1, true};
+        return {std::next(data_.begin(), static_cast<std::ptrdiff_t>(size_ - 1)), true};
     }
 
     bool operator==(ContiguousSet const& o) const noexcept {
