@@ -25,8 +25,12 @@ public:
         auto available = [&]() { return static_cast<std::size_t>(buffer_.size()) - position_; };
         if(data.size_bytes() > available()) {
             if constexpr(requires { buffer_.resize(1); }) {
-                buffer_.resize(static_cast<decltype(buffer_.size())>(
-                  static_cast<std::size_t>(buffer_.size()) + (data.size_bytes() - available())));
+                auto const newSize
+                  = static_cast<std::size_t>(buffer_.size()) + (data.size_bytes() - available());
+                if constexpr(requires { buffer_.max_size(); }) {
+                    if(newSize > static_cast<std::size_t>(buffer_.max_size())) { return false; }
+                }
+                buffer_.resize(static_cast<decltype(buffer_.size())>(newSize));
             } else {
                 return false;
             }

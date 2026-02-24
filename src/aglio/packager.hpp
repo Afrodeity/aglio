@@ -119,6 +119,17 @@ namespace detail {
 
             void resize(std::size_t newSize) { buffer.resize(newSize + startSize); }
 
+            std::size_t max_size() const {
+                if constexpr(requires { buffer.max_size(); }) {
+                    auto const bufferMaxSize = static_cast<std::size_t>(buffer.max_size());
+                    auto const adjustedMax
+                      = bufferMaxSize > startSize ? bufferMaxSize - startSize : std::size_t{0};
+                    return std::min(adjustedMax, static_cast<std::size_t>(MaxSize));
+                } else {
+                    return static_cast<std::size_t>(MaxSize);
+                }
+            }
+
             auto& operator[](std::size_t pos) { return buffer[pos]; }
 
             void finalize() {
@@ -157,13 +168,14 @@ namespace detail {
     public:
         template<typename T,
                  typename Buffer>
-        static constexpr void pack(Buffer&  buffer,
+        static constexpr bool pack(Buffer&  buffer,
                                    T const& v) {
             BufferAdapter<Buffer> headerBuffer{buffer};
+            if(headerBuffer.max_size() < HeaderSize) { return false; }
             headerBuffer.resize(HeaderSize);
 
             BufferAdapter<decltype(headerBuffer)> bodyBuffer{headerBuffer};
-            Serializer::serialize(bodyBuffer, v);
+            if(!Serializer::serialize(bodyBuffer, v)) { return false; }
             bodyBuffer.finalize();
 
             if constexpr(Config::UseCrc && Config::UseHeaderCrc) {
@@ -171,6 +183,7 @@ namespace detail {
                 auto const                          bodyCrc = Config::Crc::calc(std::as_bytes(
                   std::span(std::ranges::subrange(bodyBuffer.begin(), bodyBuffer.end()))));
 
+                if(crcBuffer.max_size() < CrcSize) { return false; }
                 crcBuffer.resize(CrcSize);
                 std::memcpy(crcBuffer.data(), std::addressof(bodyCrc), CrcSize);
                 crcBuffer.finalize();
@@ -192,6 +205,7 @@ namespace detail {
                 auto const                          bodyCrc = Config::Crc::calc(std::as_bytes(
                   std::span(std::ranges::subrange(headerBuffer.begin(), bodyBuffer.end()))));
 
+                if(crcBuffer.max_size() < CrcSize) { return false; }
                 crcBuffer.resize(CrcSize);
                 std::memcpy(crcBuffer.data(), std::addressof(bodyCrc), CrcSize);
                 crcBuffer.finalize();
@@ -207,6 +221,8 @@ namespace detail {
                             std::addressof(headerCrc),
                             CrcSize);
             }
+
+            return true;
         }
 
         template<typename T,
@@ -314,11 +330,11 @@ namespace detail {
     struct Serializer {
         template<typename T,
                  typename Buffer>
-        static void serialize(Buffer&  buffer,
+        static bool serialize(Buffer&  buffer,
                               T const& v) {
             aglio::DynamicSerializationView sebuff{buffer};
 
-            aglio::Serializer<Size_t>::serialize(sebuff, v);
+            return aglio::Serializer<Size_t>::serialize(sebuff, v);
         }
 
         struct parse_error final {

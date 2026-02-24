@@ -93,7 +93,7 @@ void test() {
 
     Type t_in = Types::createDefault<Type>();
 
-    Packager::pack(buffer, t_in);
+    REQUIRE(Packager::pack(buffer, t_in));
     Type t_out{};
     auto result = Packager::unpack(buffer, t_out);
 
@@ -119,7 +119,7 @@ TEST_CASE("Serializer rejects range that exceeds fixed-capacity container max_si
     // Serialize a vector with more elements than the target array can hold
     std::vector<int>       src    = {1, 2, 3, 4, 5};
     std::vector<std::byte> buffer = {};
-    Packager::pack(buffer, src);
+    REQUIRE(Packager::pack(buffer, src));
 
     // Deserialize into a smaller array — must fail because 5 > max_size() == 3
     std::array<int, 3> dst{};
@@ -135,7 +135,7 @@ TEST_CASE("Packager pair<primitive, struct ref>",
     std::pair<int, Types::Primitive&> pair_in{42, prim_in};
 
     std::vector<std::byte> buffer{};
-    Packager::pack(buffer, pair_in);
+    REQUIRE(Packager::pack(buffer, pair_in));
 
     Types::Primitive                  prim_out{};
     std::pair<int, Types::Primitive&> pair_out{0, prim_out};
@@ -158,7 +158,7 @@ TEST_CASE("Packager pair<primitive, variant<structs> ref>",
         std::pair<int, Variant&> pair_in{1, var_in};
 
         std::vector<std::byte> buffer{};
-        Packager::pack(buffer, pair_in);
+        REQUIRE(Packager::pack(buffer, pair_in));
 
         Variant                  var_out{};
         std::pair<int, Variant&> pair_out{0, var_out};
@@ -176,7 +176,7 @@ TEST_CASE("Packager pair<primitive, variant<structs> ref>",
         std::pair<int, Variant&> pair_in{2, var_in};
 
         std::vector<std::byte> buffer{};
-        Packager::pack(buffer, pair_in);
+        REQUIRE(Packager::pack(buffer, pair_in));
 
         Variant                  var_out{};
         std::pair<int, Variant&> pair_out{0, var_out};
@@ -194,7 +194,7 @@ TEST_CASE("Packager pair<primitive, variant<structs> ref>",
         std::pair<int, Variant&> pair_in{3, var_in};
 
         std::vector<std::byte> buffer{};
-        Packager::pack(buffer, pair_in);
+        REQUIRE(Packager::pack(buffer, pair_in));
 
         Variant                  var_out{};
         std::pair<int, Variant&> pair_out{0, var_out};
@@ -206,4 +206,31 @@ TEST_CASE("Packager pair<primitive, variant<structs> ref>",
         CHECK(pair_in.first == pair_out.first);
         CHECK(pair_in.second == pair_out.second);
     }
+}
+
+TEST_CASE("pack fails gracefully when output buffer max_size is exceeded",
+          "[packager]") {
+    struct BoundedBuffer {
+        std::array<std::byte, 8> storage{};
+        std::size_t              sz{0};
+
+        std::byte* data() { return storage.data(); }
+
+        std::size_t size() const { return sz; }
+
+        std::size_t max_size() const { return storage.size(); }
+
+        void resize(std::size_t n) { sz = n; }
+    };
+
+    using Packager = aglio::Packager<Test::packager::Configs::Minimal>;
+    // Minimal: 4-byte Size_t header + body
+
+    // int body = 4 bytes → total 8 bytes → fits exactly in max_size=8
+    BoundedBuffer buf{};
+    CHECK(Packager::pack(buf, int{42}));
+
+    // string "hello" body = Size_t(4) + 5 bytes = 9 bytes → total 13 bytes → exceeds 8
+    BoundedBuffer buf2{};
+    CHECK(!Packager::pack(buf2, std::string{"hello"}));
 }
