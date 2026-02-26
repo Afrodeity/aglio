@@ -12,6 +12,8 @@
 namespace aglio {
 
 namespace detail {
+    template<typename T>
+    constexpr bool is_trivial_v = std::is_trivially_default_constructible_v<T> && std::is_trivially_copyable_v<T>;
 
     template<typename Serializer, typename Config_>
     struct Packager {
@@ -74,11 +76,11 @@ namespace detail {
         static constexpr std::byte      FirstByte{PackageStart & 0xFF};
         static constexpr Size_t         MaxSize{Config::MaxSize};
 
-        static_assert(std::is_trivial_v<PackageStart_t> || Config::UsePackageStart == false,
+        static_assert(is_trivial_v<PackageStart_t> || Config::UsePackageStart == false, 
                       "start needs to by trivial");
-        static_assert(std::is_trivial_v<Crc_t> || Config::UseCrc == false,
+        static_assert(is_trivial_v<Crc_t> || Config::UseCrc == false, 
                       "crc needs to by trivial");
-        static_assert(std::is_trivial_v<Size_t>,
+        static_assert(is_trivial_v<Size_t>, 
                       "size needs to by trivial");
         static_assert(std::numeric_limits<Size_t>::max() >= MaxSize,
                       "max size needs to fit into Size_t");
