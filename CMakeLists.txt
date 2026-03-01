@@ -21,12 +21,14 @@ if(NOT TARGET glaze_glaze)
         GIT_REPOSITORY
         https://github.com/stephenberry/glaze.git
         GIT_TAG
-        v7.0.2
+        v7.1.0
         GIT_BRANCH
         main
         PATCH_FILE
         ${CMAKE_CURRENT_LIST_DIR}/glaze.patch)
 endif()
+
+project(aglio VERSION 0.1.0)
 
 add_library(aglio INTERFACE)
 target_include_directories(aglio INTERFACE src)
