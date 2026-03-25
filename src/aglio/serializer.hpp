@@ -73,13 +73,13 @@ struct serializer<T, Size_t> {
     template<typename Buffer>
     static constexpr bool serialize(T const& v,
                                     Buffer&  buffer) {
-        return buffer.insert(std::as_bytes(std::span{std::addressof(v), 1}));
+        return buffer.insert(std::as_bytes(std::span<T const, 1>{std::addressof(v), 1}));
     }
 
     template<typename Buffer>
     static constexpr bool deserialize(T&      v,
                                       Buffer& buffer) {
-        return buffer.extract(std::as_writable_bytes(std::span{std::addressof(v), 1}));
+        return buffer.extract(std::as_writable_bytes(std::span<T, 1>{std::addressof(v), 1}));
     }
 };
 
